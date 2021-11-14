@@ -1,14 +1,5 @@
-
 #!/bin/sh
 
-### BEGIN INIT INFO
-# Provides:        trojan
-# Required-Start:  $network $remote_fs $syslog
-# Required-Stop:   $network $remote_fs $syslog
-# Default-Start:   2 3 4 5
-# Default-Stop:
-# Short-Description: Start trojan-go
-### END INIT INFO
 
 dir=$(cd $(dirname $0})/; pwd)
 CMD=./cloudflared
@@ -18,8 +9,7 @@ cd $dir || exit -1
 
 do_start()
 {
-
-	$CMD proxy-dns --address 0.0.0.0 --port 5353 &>/dev/null &
+	$CMD -config config.yaml &>/dev/null &
 }
 
 do_stop()

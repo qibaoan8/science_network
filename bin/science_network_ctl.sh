@@ -10,11 +10,6 @@ default_dns=$(route -n |grep '^0.0.0.0' |awk '{print $2}')
 dnsmasq_domain_list="conf/foreign_domain.txt"
 dnsmasq_domain_conf="/etc/dnsmasq.d/foreign_domain.conf"
 
-set_env(){
-    export PS1="\n\e[1;37m[\e[m\e[1;32m\u\e[m\e[1;33m@\e[m\e[1;35m\H\e[m \e[4m\`pwd\`\e[m\e[1;37m]\e[m\e[1;36m\e[m\n$"
-    alias ll='ls -lh'
-    alias vim='vi'
-}
 
 set_auto_start(){
 	start_file="/config/scripts/post-config.d/start.sh"
@@ -140,4 +135,3 @@ main() {
 }
 main "$@"
 set_auto_start
-set_env
