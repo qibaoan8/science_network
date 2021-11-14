@@ -1,20 +1,15 @@
 ## science_network介绍
 
-`science_network`是自己拼装的一个在edgeos上一键安装的科学上网，目前在`er-x` 上运行没问题，在其他设备上运行理论上也没啥问题，我理解只要是在edgeos上就行。
+`science_network`是自己搭配的一个在`edgeos`上一键安装的科学上网解决方案，目前在`er-x` 上运行没问题，在其他设备上运行理论上也没啥问题，我理解只要是在`edgeos` 上就行。
 
+起初需求就是想在 `er-x` 上安装一个科学上网工具，但是从网上查找资料都是使用`openwrt` 系统，我也尝试着刷机到这个系统，但是无奈每次都是刷完后无法启动，路由器反复重启，差点变砖。还好找了个[文档]
+(https://pfschina.org/wp/?p=1979)通过`TFTP`刷回到了原装系统。文档里面没写清楚tftp服务端的ip地址，经过我多次扫描确认，路由器上tftp的默认地址是`192.168.1.20` 。
 
+后来就坚持在`edgeos`系统上寻找解决方案，大多数文档介绍的都是通过`ss`  `chinadns`  `dnsmasq`  `firewall` 组件实现，但是我的代理工具是`trojan`是一个https协议实现的，几乎没有相关文档介绍，有介绍的写的也不是太详细。
 
-起初需求就是想在 `er-x` 上安装一个科学上网工具，但是从网上查找资料都是使用`openwrt`	系统，我也尝试的刷机到这个系统，但是无奈每次都是刷完后无法启动，路由器反复重启，差点变砖。还好找到了这个[文档](https://pfschina.org/wp/?p=1979) ，让我通过`TFTP`刷回到了原装系统。注意，他这个文档里面没写清楚tftp服务端的ip地址，经过我多次扫描确认，路由器上tftp的默认地址是`192.168.1.10` 。
+再说说`chinadns` ，现在已经停止维护了，还有些小bug，而且他的实现原理不太可靠。
 
-
-
-后来就坚持在`edgeos`上寻找解决方案，大多数文档介绍的都是通过`ss`  `chinadns`  `dnsmasq`  `firewall` 实现的，但是我的代理工具是`trojan`是一个协议实现的，几乎没有相关文档介绍，有介绍的写的也不是太详细。
-
-另外还有`chinadns`	 已经停止维护了，有些小bug，而且他的实现原理不太可靠，所以只能自己动手研究了。
-
-
-
-然后就有了这个`science_network`	 解决方案， 在`er-x`设备`edgeos`系统使用`trojan`代理一键安装方案。
+然后就有了这个`science_network` 这个解决方案， 在`er-x`设备`edgeos`系统使用`trojan`代理一键安装方案。
 
 
 
@@ -22,17 +17,15 @@
 
 这里先介绍下`安装方法`，想了解实现原理的可以下面查看详细介绍。
 
-
-
 先将代码下载到本地，修改`trojan` 的配置文件`plugins/trojan/config.json` ，将自己的服务器和密码配置上。
 
 ```json
 {
-    "remote_addr": "wwwabc.com",   // 填写自己的服务
+    "remote_addr": "wwwabc.com", 
     "remote_port": 443,
     "password":
     [
-        "*****"   // 填写自己的密码
+        "*****"
     ]
 }
 ```
@@ -45,7 +38,7 @@
 scp -r science_network ubnt@192.168.1.1:/tmp/
 ```
 
-复制到路由器的系统目录，启动工具，启动会自动配置路由器开机启动
+复制到路由器的系统目录，执行启动脚本，脚本会自动配置路由器开机启动
 
 ```shell
 mkdir /usr/local
@@ -69,7 +62,7 @@ cat /config/scripts/post-config.d/start.sh
 
 
 
-注意：路由器本身无法实现科学上网，一定要用局域网内的设备测试。
+注意：路由器的系统无法实现科学上网，一定要用局域网内的设备连通性测试。
 
 
 
@@ -77,13 +70,13 @@ cat /config/scripts/post-config.d/start.sh
 
 `science_network` 是由多个组件拼成的一个解决方案，里面用到的组件有`dnsmasq` `cloudflare` `trojan` `iptables` 。
 
-`dnsmasq `就是路由器自己的dns服务。
+`dnsmasq `就是路由器自己的dns服务，直接就可以启动。
 
-`cloudflare` 是通过`DOH`(Dns over Https)协议实现的防劫持工具，代替原来的`chinadns`。
+`cloudflare` 是通过`DOH`(Dns over Https)协议实现的防劫持dns解析工具，代替原来的`chinadns`。稍微有点慢。
 
 `trojan` 通过TLS协议，和服务端通信，模拟https请求。
 
-`iptables `配置端口转发逻辑。默认走网关，在指定`ipset`的ip走代理。
+`iptables `配置端口转发逻辑。默认走网关，存放在ipset`的ip走代理。
 
 
 
@@ -95,13 +88,13 @@ cat /config/scripts/post-config.d/start.sh
 
 如果有域名不在国外域名列表内，又需要配置科学上网的，可以直接修改如上列表文件。
 
-`dnsmasq`	是系统自带的服务，不需要安装，直接启停即可。
+`dnsmasq` 是系统自带的服务，不需要安装，直接启停即可。
 
 
 
 #### cloudflare
 
-cloudflare 是一个支持DOH协议的dns代理服务，默认启动53端口接受请求通过https协议转发给权威dns服务器，防止网络传输过程中被劫持。
+cloudflare 是一个支持DOH协议的dns代理服务，默认启动53端口接收请求通过https协议转发给权威dns服务器，防止网络传输过程中被劫持。
 
 该工具默认连接的doh服务端是搭建在国外的`https://1.1.1.1/dns-query` `https://1.0.0.1/dns-query`
 
@@ -109,11 +102,9 @@ cloudflare 是一个支持DOH协议的dns代理服务，默认启动53端口接�
 
 我使用的就是腾讯的: `https://doh.pub/dns-query`
 
+最核心的问题来了，`edgerouter` 采用的是`mips`架构处理器，[cloudflare ](https://github.com/cloudflare/cloudflared) 的git仓库里Releases有没有这个架构的包，网上搜索了好久也没找到，所以只能自己编译了。
 
-
-最核心的问题来了，edgerouter 采用的是mips架构处理器，[cloudflare ](https://github.com/cloudflare/cloudflared) 的git仓库里Releases有没有这个架构的包，网上搜索了好久也没找到，所以只能自己编译了。这个真是个大工程。
-
-编译使用的海外的ubuntu交叉编译，海外的下载依赖库是真快。
+编译使用的海外的`ubuntu`系统交叉编译，海外的下载依赖库是真快。
 
 首先安装golang，安装默认的golang， 这个最高到1.13版本
 
@@ -126,9 +117,10 @@ apt install git
 
 
 
-edgerouter的源码推荐使用1.17，这个版本的只能源码安装
+`edgerouter` 的源码推荐使用1.17版本的go，这个版本go的只能源码安装了
 
 ```shell
+# 手动下载go的源码
 tar zxf go1.17.3.src.tar.gz  -C /usr/local/
 cd /usr/local/go/src/
 ./all.bash
@@ -137,7 +129,7 @@ ln -sf /usr/local/go/bin/go /usr/bin/go
 
 
 
-下面正式开始编译edgerouter
+下面正式开始编译`cloudflared`
 
 ```shell
 # 设置代码下载路径
@@ -156,23 +148,23 @@ GOOS=linux GOARCH=mipsle go build -v -x github.com/cloudflare/cloudflared/cmd/cl
 
 编译好之后cloudflare的二进制文件会在当前目录下。 直接拷贝到路由器就能使用。
 
-不过有个问题，编译完的文件有29M，我的只有256M的RAM和ROM，路由器的资源相当紧缺。我觉得这里肯定可以去掉一些不必要的东西来瘦身，没精力了，以后再说吧。
+不过有个问题，编译完的文件有29M，我的路由器只有256M的RAM和ROM，路由器的资源相当宝贵。我觉得这里肯定可以去掉一些不必要的东西来瘦身，没精力了，以后再说吧。
 
 
 
 #### trojan
 
-trojan 是使用go语言编写的工具，通过https协议通信的代理服务，稳定性较强，实际是[trojan-go](https://github.com/p4gefau1t/trojan-go)这个代码库，。这个包在git仓库有编译好的包，直接下载使用就行。
+trojan 是使用go语言编写的工具，通过https协议通信的代理服务，稳定性较强，实际是[trojan-go](https://github.com/p4gefau1t/trojan-go)这个代码库。这个包在git仓库有编译好的包，直接下载使用就行。
 
 这里用的是 `trojan-go-linux-mips-hardfloat.zip`这个包。
 
-配置文件代码里提供的，修改下服务器和密码就行。代理模式要选择`nat`模式。
+配置文件是代码里提供的，修改下服务器和密码就行。启动模式要选择`nat`模式。
 
 
 
 #### iptables
 
-iptables 是最后一层负责转发的逻辑，按理说trojan支持TCP/UDP两种代理方式，UDP协议如果使用trojan的话就不用再装个`cloudflared`了，但是可惜自带的iptables 不支持TPROXY网关模式，没法把请求转发到trojan。
+iptables 是最后一层负责转发的逻辑，其实`trojan` 是支持TCP/UDP两种代理方式的，UDP协议如果使用`trojan` 的话就不用再装个`cloudflared`了，但是可惜自带的iptables 不支持TPROXY网关模式，没法把请求转发到trojan。
 
 所以这里只有TCP使用的iptables转发，只有一条配置。
 
@@ -182,12 +174,21 @@ iptables -t nat -I PREROUTING -p tcp -m set --match-set $ipset_name dst -j REDIR
 
 
 
-
-
 ## 结束
 
 好了，这就是全部了，投入了一周空闲时间研究这个原理和实现方案，有些包还需要自己编译，是在不容易。所以就沉淀个文档，以后方便大家安装使用。
 
 纯原创，希望大家支持。
 
-**该方案仅限技术交流和学习记录，严禁用于任何商业用途和非法行为，否则后果自负**	
+#### 参考文档：
+
+[使用 EdgeMax 路由器自动**](http://allenn.cn/articles/2016-10/2016-10-20-edgemax-ss-tutorial/)
+
+[dnsmasq + Cloudflare DoH 自建 DNS](https://page.codespaper.com/2019/dnsmasq-cloudflare-doh/)
+
+[EdgeRouter使用TFTP恢复方法](https://pfschina.org/wp/?p=1979)
+
+
+
+**该方案仅限技术交流和学习记录，严禁用于任何商业用途和非法行为，否则后果自负** 
+
